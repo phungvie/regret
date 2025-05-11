@@ -1,0 +1,88 @@
+version: '3.9' # Sử dụng phiên bản Docker Compose 3.9
+
+services:
+  # ----------------------------------------
+  # 1️⃣ Keycloak Service: Cung cấp dịch vụ xác thực người dùng
+  # ----------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.0 # Sử dụng Keycloak phiên bản 25
+    container_name: regret-keycloak
+    command: start-dev # Khởi động ở chế độ phát triển
+
+    environment:
+      KEYCLOAK_ADMIN: admin # Tên tài khoản admin
+      KEYCLOAK_ADMIN_PASSWORD: admin # Mật khẩu admin
+
+      KC_DB: postgres # Sử dụng PostgreSQL làm cơ sở dữ liệu
+      KC_DB_USERNAME: postgres # Tên người dùng DB
+      KC_DB_PASSWORD: "postgresVIET@regret" # Mật khẩu DB (có ký tự đặc biệt nên đặt trong dấu nháy)
+      KC_DB_URL_HOST: regret-postgres # Hostname DB trỏ đến service postgres
+      KC_DB_URL_DATABASE: regret_db # Tên cơ sở dữ liệu
+      KC_DB_URL_PORT: 5432 # Cổng kết nối đến DB
+      KC_DB_URL_PARAMETERS: sslmode=disable # Không sử dụng SSL
+
+      KC_HOSTNAME_STRICT: false # Tắt kiểm tra hostname nghiêm ngặt
+
+    ports:
+      - "8090:8080" # Mở cổng 8080 bên trong container ra cổng 8090 bên ngoài
+
+    networks:
+      - regret-network
+
+    depends_on:
+      - postgres # Chờ postgres khởi động trước
+
+  # ----------------------------------------
+  # 2️⃣ PostgreSQL Service: Cơ sở dữ liệu cho Keycloak
+  # ----------------------------------------
+  postgres:
+    image: postgres:15
+    container_name: regret-postgres
+
+    environment:
+      POSTGRES_DB: regret_db # Tên DB tạo khi khởi động
+      POSTGRES_USER: postgres # Tên người dùng mặc định
+      POSTGRES_PASSWORD: "postgresVIET@regret" # Mật khẩu có ký tự đặc biệt
+
+    ports:
+      - "5432:5432" # Mở cổng PostgreSQL
+
+    networks:
+      - regret-network
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Lưu dữ liệu để tránh mất khi xóa container
+
+  # ----------------------------------------
+  # 3️⃣ MongoDB Service: (nếu dùng cho ứng dụng khác)
+  # ----------------------------------------
+  mongodb:
+    image: mongo:6
+    container_name: regret-mongodb
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: "mongoVIET@regret"
+
+    ports:
+      - "27017:27017" # Cổng mặc định của MongoDB
+
+    networks:
+      - regret-network
+
+    volumes:
+      - mongodata:/data/db # Lưu trữ dữ liệu MongoDB
+
+# ----------------------------------------
+# 4️⃣ Docker Network: Cho phép các container giao tiếp nội bộ
+# ----------------------------------------
+networks:
+  regret-network:
+    driver: bridge
+
+# ----------------------------------------
+# 5️⃣ Docker Volumes: Lưu dữ liệu persist
+# ----------------------------------------
+volumes:
+  pgdata:     # Volume cho PostgreSQL
+  mongodata:  # Volume cho MongoDB
