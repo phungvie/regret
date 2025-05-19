@@ -1,3 +1,6 @@
 [submodule "regret-server"]
 	path = regret-server
 	url = https://github.com/phungvie/regret-server.git
+[submodule "web_app_regret"]
+	path = web_app_regret
+	url = https://github.com/phungvie/web_app_regret.git
